@@ -1,12 +1,18 @@
-import streamlit as st
 import random
 import time
-from gtts import gTTS
+from gTTS import gTTS
+import streamlit as st
+
 # --- 網頁基本設定 ---
-st.set_page_config(page_title="日文單字學習 - 蔡大哥專用", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(
+    page_title="日文單字學習 - 蔡大哥專用",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 # --- 莫蘭迪藍色調樣式與 CSS 優化 ---
-st.markdown("""
+st.markdown(
+    """
     <style>
     .main {
         background-color: #F4F6F8;
@@ -39,9 +45,11 @@ st.markdown("""
         margin-bottom: 20px;
     }
     </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
-# --- 完整單字資料庫 (1-42課 全面校正第2欄位假名，無刪減) ---
+# --- 完整單字資料庫 (1-10課) ---
 word_db = [
     # 第1課
     ["1", "わたし", "私", "我"],
@@ -67,7 +75,6 @@ word_db = [
     ["1", "なんさい", "何歳", "幾歲"],
     ["1", "はい", "-", "是的"],
     ["1", "いいえ", "-", "不是/不"],
-
     # 第2課
     ["2", "これ", "-", "這"],
     ["2", "それ", "-", "那"],
@@ -102,7 +109,6 @@ word_db = [
     ["2", "おみやげ", "お土産", "伴手禮"],
     ["2", "えいご", "英語", "英語"],
     ["2", "にほんご", "日本語", "日語"],
-
     # 第3課
     ["3", "ここ", "-", "這裡"],
     ["3", "そこ", "-", "那裡"],
@@ -136,7 +142,6 @@ word_db = [
     ["3", "なんがい", "何階", "幾樓"],
     ["3", "えん", "円", "日圓"],
     ["3", "いくら", "-", "多少錢"],
-
     # 第4課
     ["4", "おきる", "起きる", "起床"],
     ["4", "ねる", "寝る", "睡覺"],
@@ -180,7 +185,6 @@ word_db = [
     ["4", "どようび", "土曜日", "星期六"],
     ["4", "にちようび", "日曜日", "星期日"],
     ["4", "なんようび", "何曜日", "星期幾"],
-
     # 第5課
     ["5", "いく", "行く", "去"],
     ["5", "くる", "来る", "來"],
@@ -231,7 +235,6 @@ word_db = [
     ["5", "なんにち", "何日", "幾號/幾天"],
     ["5", "いつ", "-", "何時"],
     ["5", "たんじょうび", "誕生日", "生日"],
-
     # 第6課
     ["6", "たべる", "食べる", "吃"],
     ["6", "のむ", "飲む", "喝"],
@@ -277,7 +280,6 @@ word_db = [
     ["6", "ちょっと", "-", "一下/稍微"],
     ["6", "いつも", "-", "總是/經常"],
     ["6", "ときどき", "時々", "有時"],
-
     # 第7課
     ["7", "きる", "切る", "切/剪"],
     ["7", "おくる", "送る", "寄送"],
@@ -313,7 +315,6 @@ word_db = [
     ["7", "もう", "-", "已經"],
     ["7", "まだ", "-", "尚未"],
     ["7", "これから", "-", "從現在起"],
-
     # 第8課
     ["8", "はんさむ", "-", "英俊/帥氣"],
     ["8", "きれい", "-", "漂亮/乾淨"],
@@ -355,7 +356,6 @@ word_db = [
     ["8", "りょう", "寮", "宿舍"],
     ["8", "せいかつ", "生活", "生活"],
     ["8", "おしごと", "お仕事", "工作"],
-
     # 第9課
     ["9", "わかる", "分かる", "懂/明白"],
     ["9", "ある", "-", "有/持有"],
@@ -396,10 +396,9 @@ word_db = [
     ["9", "たくさん", "-", "很多"],
     ["9", "すこし", "少し", "一點/少量"],
     ["9", "ぜんぜん", "全然", "完全(接否定)"],
-
     # 第10課
     ["10", "あります", "-", "有/在(物)"],
-    ["10", "います", "-", "有/在(人/動物)"],
+    ["10", "います", "-", "有無/在(人/動物)"],
     ["10", "いろいろ", "-", "各種各樣"],
     ["10", "おとこのひと", "男の人", "男人"],
     ["10", "おんなのひと", "女の人", "女人"],
@@ -435,14 +434,13 @@ word_db = [
     ["10", "そと", "外", "外面"],
     ["10", "となり", "鄰", "隔壁/旁邊"],
     ["10", "ちかく", "近く", "附近"],
-    ["10", "あいだ", "間", "中間/之間"]
+    ["10", "あいだ", "間", "中間/之間"],
 ]
 
 # --- 初始化 Session State ---
 if "initialized" not in st.session_state:
     st.session_state.initialized = True
-    st.session_state.mode = "menu"  # menu, study, quiz
-    st.session_state.lesson = "ALL"
+    st.session_state.mode = "menu"  # menu, study
     st.session_state.current_idx = 0
     st.session_state.active_list = []
     st.session_state.quiz_mode = False
@@ -459,10 +457,18 @@ if st.sidebar.button("🏠 回主選單", use_container_width=True):
 
 st.sidebar.markdown("---")
 st.sidebar.header("撥放與聲音設定")
-st.session_state.play_audio = st.sidebar.checkbox("開啟語音朗讀 (gTTS)", value=st.session_state.play_audio)
-st.session_state.audio_gap = st.sidebar.slider("讀音間隔 (秒)", 0.5, 3.0, st.session_state.audio_gap, 0.1)
-st.session_state.show_delay = st.sidebar.slider("揭曉延遲 (秒)", 0.0, 3.0, st.session_state.show_delay, 0.1)
-st.session_state.next_delay = st.sidebar.slider("下一題等待 (秒)", 2.0, 15.0, st.session_state.next_delay, 0.5)
+st.session_state.play_audio = st.sidebar.checkbox(
+    "開啟語音朗讀 (gTTS)", value=st.session_state.play_audio
+)
+st.session_state.audio_gap = st.sidebar.slider(
+    "讀音間隔 (秒)", 0.5, 3.0, st.session_state.audio_gap, 0.1
+)
+st.session_state.show_delay = st.sidebar.slider(
+    "揭曉延遲 (秒)", 0.0, 3.0, st.session_state.show_delay, 0.1
+)
+st.session_state.next_delay = st.sidebar.slider(
+    "下一題等待 (秒)", 2.0, 15.0, st.session_state.next_delay, 0.5
+)
 
 # --- 主畫面邏輯 ---
 if st.session_state.mode == "menu":
@@ -473,7 +479,9 @@ if st.session_state.mode == "menu":
     with col1:
         if st.button("🎲 隨機聽力測驗", use_container_width=True, type="primary"):
             st.session_state.quiz_mode = True
-            st.session_state.active_list = random.sample(word_db, min(25, len(word_db)))
+            st.session_state.active_list = random.sample(
+                word_db, min(25, len(word_db))
+            )
             st.session_state.current_idx = 0
             st.session_state.mode = "study"
             st.rerun()
@@ -488,13 +496,15 @@ if st.session_state.mode == "menu":
 
     st.markdown("### 選擇指定課程 (1-10課)")
     lessons = sorted(list(set([int(w[0]) for w in word_db])))
-    
+
     cols = st.columns(5)
     for i, l in enumerate(lessons):
         with cols[i % 5]:
             if st.button(f"第 {l} 課", use_container_width=True):
                 st.session_state.quiz_mode = False
-                st.session_state.active_list = [w for w in word_db if int(w[0]) == l]
+                st.session_state.active_list = [
+                    w for w in word_db if int(w[0]) == l
+                ]
                 random.shuffle(st.session_state.active_list)
                 st.session_state.current_idx = 0
                 st.session_state.mode = "study"
@@ -511,40 +521,46 @@ elif st.session_state.mode == "study":
             st.rerun()
     else:
         data = active_list[idx]
-        
+
         # 頂部進度條與資訊
-        st.markdown(f"### 進度: {idx + 1} / {len(active_list)}  |  第 {data[0]} 課")
+        st.markdown(
+            f"### 進度: {idx + 1} / {len(active_list)}  |  第 {data[0]} 課"
+        )
         st.progress((idx + 1) / len(active_list))
 
-        # 顯示區塊
         st.markdown("<br>", unsafe_allow_html=True)
-        
-        container = st.container()
-        with container:
+
+        # 顯示區塊
+        with st.container():
             st.markdown('<div class="card-box">', unsafe_allow_html=True)
-            
+
             # 漢字
             kanji_text = data[2] if data[2] != "-" else ""
-            st.markdown(f'<p class="big-kanji">{kanji_text}</p>', unsafe_allow_html=True)
-            
-            # 假名 (如果是測驗模式，開始時隱藏)
+            st.markdown(
+                f'<p class="big-kanji">{kanji_text}</p>', unsafe_allow_html=True
+            )
+
+            # 假名
             word_display = "？" if st.session_state.quiz_mode else data[1]
-            st.markdown(f'<p class="big-kana">{word_display}</p>', unsafe_allow_html=True)
-            
+            st.markdown(
+                f'<p class="big-kana">{word_display}</p>', unsafe_allow_html=True
+            )
+
             # 中文解釋
             mean_display = "" if st.session_state.quiz_mode else data[3]
-            st.markdown(f'<p class="big-mean">{mean_display}</p>', unsafe_allow_html=True)
-            
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<p class="big-mean">{mean_display}</p>', unsafe_allow_html=True
+            )
 
-        # 語音播放 (利用 gTTS 轉成語音並用 st.audio 播放)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        # 語音播放
         if st.session_state.play_audio:
             try:
-                from gTTS import gTTS
-                tts = gTTS(text=data[1], lang='ja')
+                tts = gTTS(text=data[1], lang="ja")
                 audio_file = "temp_voice.mp3"
                 tts.save(audio_file)
-                st.audio(audio_file, format='audio/mp3', autoplay=True)
+                st.audio(audio_file, format="audio/mp3", autoplay=True)
             except Exception as e:
                 st.info(f"(語音載入提示: {e})")
 
@@ -552,7 +568,7 @@ elif st.session_state.mode == "study":
         col_btn1, col_btn2, col_btn3 = st.columns(3)
         with col_btn1:
             if st.button("🔊 再聽一次", use_container_width=True):
-                pass # 重新整理頁面會再次觸發語音
+                st.rerun()
         with col_btn2:
             if st.button("⏭ 下一題", use_container_width=True, type="primary"):
                 st.session_state.current_idx += 1
@@ -562,14 +578,10 @@ elif st.session_state.mode == "study":
                 st.session_state.mode = "menu"
                 st.rerun()
 
-        # 自動推進機制 (使用 st.empty 配合 time.sleep 倒數換頁)
+        # 自動推進機制
         if st.session_state.quiz_mode:
-            # 測驗模式先揭曉假名與解釋
             time.sleep(st.session_state.show_delay)
-            # 之後自動跳轉下一題
-            time.sleep(st.session_state.next_delay)
-        else:
-            time.sleep(st.session_state.next_delay)
-        
+        time.sleep(st.session_state.next_delay)
+
         st.session_state.current_idx += 1
         st.rerun()
