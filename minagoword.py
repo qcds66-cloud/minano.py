@@ -1,7 +1,7 @@
 import streamlit as st
 import random
 import time
-import gTTS
+from gtts import gTTS
 # --- 網頁基本設定 ---
 st.set_page_config(page_title="日文單字學習 - 蔡大哥專用", layout="wide", initial_sidebar_state="expanded")
 
